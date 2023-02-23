@@ -1,0 +1,55 @@
+*, *::before, *::after {
+    box-sizing: border-box; 
+}
+
+h1 {
+    text-align: center;
+}
+
+.main {
+    display: flex;
+    justify-content: center;
+}
+
+.calculator {
+    text-align: right;
+    background-color: #aaa;
+    padding: 20px;
+}
+
+.screen-previous, .screen-current{
+    border: 1px solid white;
+}
+.screen-previous {
+    min-height: 32px;
+}
+
+.screen-current {
+    font-size: 40px;
+    margin-bottom: 20px;
+}
+
+.calculator-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 67px);
+    grid-gap: 10px;
+    justify-content: center;
+}
+
+.calculator-grid > button {
+    cursor: pointer; 
+    outline: none;
+    width: 67px;
+    font-size: 20px;
+    padding: 20px;
+    border: 2px solid black;
+    border-radius: 50%;
+}
+
+/* .calculator-grid > button:hover {
+    
+}  */
+
+footer {
+    text-align: center;
+}
