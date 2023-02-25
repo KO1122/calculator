@@ -2,6 +2,9 @@ const numberBtns = document.querySelectorAll('.number');
 const operatorBtns = document.querySelectorAll('.operator');
 const equalBtn = document.querySelector('.equal');
 const clearBtn = document.querySelector('.clear');
+const deleteBtn = document.querySelector('.delete');
+const decimalPointBtn = document.querySelector('.decimal-point');
+const plusMinusBtn = document.querySelector('.plus-minus');
 const screenPrevText = document.querySelector('.screen-previous');
 const screenCurrText = document.querySelector('.screen-current');
 
@@ -17,19 +20,20 @@ numberBtns.forEach(button => {
 
 function clickNumber(numButtonText) {
 
-    // If a result has not yet been computed 
-    if (!haveResult) {
-        // If number button clicked is 0 
-        if (screenCurrText.textContent === '0') screenCurrText.textContent = numButtonText;
-        // Otherwise, append number button value to current screen display
-        else screenCurrText.textContent += numButtonText;   
-    }
-    else {
-        // Reinitialize variables for a new calculation and reset previous screen  
+    // If a result has previously been computed 
+    if (haveResult) {
+        // Reinitialize variables for a new calculation 
+        // Give current screen value of newly pressed number button and reset previous screen display
         screenCurrText.textContent = numButtonText;
         screenPrevText.textContent= '';
-        clear();
+        clearVars();
+        return; 
     }
+
+    // If number button clicked is 0, retain screen display as '0'
+    if (screenCurrText.textContent === '0') screenCurrText.textContent = numButtonText;
+    // Otherwise, append number button value to current screen display
+    else screenCurrText.textContent += numButtonText;   
 }
 
 operatorBtns.forEach(button => {
@@ -38,39 +42,33 @@ operatorBtns.forEach(button => {
 
 function clickOperator(operatorBtnText) {
 
-    if (!haveResult) {
-
-        // If an operator button is clicked for the first time
-        if (!operand1) {
-            operand1 = screenCurrText.textContent;
-            operator = operatorBtnText;
-            screenPrevText.textContent = `${operand1} ${operatorBtnText}`;
-            screenCurrText.textContent = '';
-        }
-
-        // If an operator button is clicked again
-        else {
-            // Replace value of old operator with the new one  
-            operator = operatorBtnText;
-            screenPrevText.textContent = `${operand1} ${operatorBtnText}`;
-        }
+    if (haveResult) {
+        // Function checks if an error exists
+        // Terminates upper nested function if there is an error
+        isError();
+        let result = screenCurrText.textContent;
+        operand1 = result;
+        operand2 = "";
+        operator = operatorBtnText;
+        screenPrevText.textContent= `${result} ${operator}`;
+        screenCurrText.textContent = '0';
+        haveResult = false; 
+        return;
     }
+
+    // If an operator button is clicked for the first time
+    if (!operand1) {
+        operand1 = screenCurrText.textContent;
+        operator = operatorBtnText;
+        screenPrevText.textContent = `${operand1} ${operatorBtnText}`;
+        screenCurrText.textContent = '0';
+    }
+
+    // If an operator button is clicked again successively 
     else {
-        // If the calculation result is not 'Error' 
-        if (screenCurrText.textContent !== 'Error') {
-            let result = screenCurrText.textContent;
-            operand1 = result;
-            operand2 = "";
-            operator = operatorBtnText;
-            screenPrevText.textContent= `${result} ${operator}`;
-            screenCurrText.textContent = '';
-            haveResult = false; 
-        }
-        else {
-            screenCurrText.textContent = '0';
-            screenPrevText.textContent= '';
-            clear();
-        }
+        // Replace value of old operator with the new one  
+        operator = operatorBtnText;
+        screenPrevText.textContent = `${operand1} ${operatorBtnText}`;
     }
 }
 
@@ -78,65 +76,108 @@ equalBtn.addEventListener('click', () => clickEqual());
 
 function clickEqual() {
 
-    if (!haveResult) {
-        operand2 = screenCurrText.textContent;
-        
-        // Only calculate if operand 1, operand 2 and operator have values 
-        if (operand1 && operand2 && operator) {
-            let result = operate(operator, operand1, operand2);
-            screenCurrText.textContent = result;
-            screenPrevText.textContent = `${operand1} ${operator} ${operand2} = ${result}`;
-            haveResult = true;
-        }
+    if (haveResult) {
+        isError();
+        // If result has been calculated, repeatedly clicking on equal button will operate on result ... 
+        operand1 = screenCurrText.textContent;
+        let result = operate(operator, operand1, operand2);
+        screenCurrText.textContent = result;
+        screenPrevText.textContent = `${operand1} ${operator} ${operand2} = ${result}`;
+        return;
     }
-    else {
-        if (screenCurrText.textContent !== 'Error') {
-            // If result has been calculated, repeatedly clicking on equal button will operate on result ... 
-            let result = operate(operator, operand1, operand2);
-            operand1 = result;
-            screenCurrText.textContent = result;
-            screenPrevText.textContent = `${operand1} ${operator} ${operand2} = ${result}`;
-        }
-        else {
-            screenCurrText.textContent = '0';
-            screenPrevText.textContent= '';
-            clear();
-        }
+    
+    operand2 = screenCurrText.textContent;
+    // Only calculate if operand 1, operand 2 and operator have values 
+    if (operand1 && operand2 && operator) {
+        let result = operate(operator, operand1, operand2);
+        screenCurrText.textContent = result;
+        screenPrevText.textContent = `${operand1} ${operator} ${operand2} = ${result}`;
+        haveResult = true;
     }
 }
 
 clearBtn.addEventListener('click', () => {
-    screenCurrText.textContent = '0';
-    screenPrevText.textContent= '';
-    clear();
+    fullClear();
 });
 
-function clear() {
+function clearVars() {
     operand1 = "";
     operand2 = "";
     operator = null;
     haveResult = false; 
 }
 
-function add(num1, num2) {
-    return num1 + num2;
+function fullClear() {
+    screenCurrText.textContent = '0';
+    screenPrevText.textContent= '';
+    clearVars();
 }
 
-function subtract(num1, num2) {
-    return num1 - num2;
+// Function handles divide by 0 scenario when result becomes 'Error'
+function isError() {
+    if (screenCurrText.textContent === 'Error') {
+        fullClear();
+        throw new Error("Error value found in lower screen display");
+    }
 }
 
-function multiply(num1, num2) {
-    return num1 * num2;
+deleteBtn.addEventListener('click', clickDeleteBtn);
+
+function clickDeleteBtn() {
+    isError();
+    if (haveResult) return;
+    if (screenCurrText.textContent.length === 1) screenCurrText.textContent = '0';
+    else screenCurrText.textContent = screenCurrText.textContent.slice(0, -1);
+    if (screenCurrText.textContent === '-') screenCurrText.textContent = '0';
 }
 
-function divide(num1, num2) {
-    return num1 / num2;
+plusMinusBtn.addEventListener('click', clickPlusMinus);
+
+function clickPlusMinus() {
+    isError();
+    if (haveResult) return;
+    screenCurrText.textContent = `${Number(screenCurrText.textContent) * -1}`;
 }
 
-function modulo(num1, num2) {
-    return num1 % num2
+decimalPointBtn.addEventListener('click', clickDecimalPoint);
+
+function clickDecimalPoint() {
+    isError();
+    if (haveResult) return;
+    if (!screenCurrText.textContent.includes('.')) screenCurrText.textContent += '.';
 }
+
+// Add keyboard support 
+document.addEventListener('keydown', typeKey);
+
+function typeKey(e) {
+    let operators = ['+', '-', '/', '*', '%']
+    if (e.key >= 0 && e.key <= 9) clickNumber(e.key);
+    if (operators.includes(e.key)) clickOperator(convertOperator(e.key));
+    if (e.key === '=' || e.key === 'Enter') clickEqual();
+    if (e.key === 'Escape') fullClear();
+    if (e.key === 'Backspace') clickDeleteBtn();
+    if (e.key.toLowerCase() === 'p' || e.key.toLowerCase() === 'm') clickPlusMinus(); 
+    if (e.key === '.') clickDecimalPoint();
+}
+
+function convertOperator(keyOperator) {
+    if (keyOperator === '+' || keyOperator === '-' || keyOperator === '%') return keyOperator;
+    else if (keyOperator === '*') return '×';
+    else if (keyOperator === '/') return '÷';
+}
+
+// Add function for commas ???
+
+// Add function for screen overflow
+
+// Add function for rounding 
+
+// Fix floating point division error 0.2 x 3 = 0.6 not 0.600001
+
+// IF result found, disable all other buttons, e.g. delete, plus-minus
+
+// Add textbox to introduce keyboard support 
 
 function operate(operator, operand1, operand2) {
 
@@ -145,20 +186,16 @@ function operate(operator, operand1, operand2) {
 
     switch (operator) {
         case "+":
-            return add(num1, num2);
+            return num1 + num2;
         case "-":
-            return subtract(num1, num2);
+            return num1 - num2;
         case "×":
-            return multiply(num1, num2);
+            return num1 * num2; 
         case "÷":
-            if (num2 === 0) {
-                return 'Error';
-            }
-            return divide(num1, num2);
+            if (num2 === 0) return 'Error'; 
+            else return num1 / num2;
         case "%":
-            if (num2 === 0) {
-                return 'Error';
-            }
-            return modulo(num1, num2);
+            if (num2 === 0) return 'Error'; 
+            else return num1 % num2;
     }
 }
